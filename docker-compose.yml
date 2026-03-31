@@ -33,6 +33,21 @@ services:
     depends_on:
       - postgres
 
+  minio:  # <-- MinIO doit être au même niveau que postgres et n8n
+    image: minio/minio
+    container_name: minio_tp
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
 volumes:
   pgdata:
   n8ndata:
+  minio_data:
