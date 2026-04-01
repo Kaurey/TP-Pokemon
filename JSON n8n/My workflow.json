@@ -1,0 +1,1157 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        -224
+      ],
+      "id": "1e39e215-e977-458d-b02c-835960a19d44",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "ingestion_runs",
+          "mode": "list",
+          "cachedResultName": "ingestion_runs"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "run_id": 0,
+            "records_received": 0,
+            "records_inserted": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "start_time",
+              "displayName": "start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "end_time",
+              "displayName": "end_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "records_received",
+              "displayName": "records_received",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "records_inserted",
+              "displayName": "records_inserted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -192,
+        -224
+      ],
+      "id": "9226e8c7-71aa-4506-b816-2e9e27a6e094",
+      "name": "Insert ingestion_run",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const runId = $('Insert ingestion_run').first().json.run_id;\n\nreturn items[0].json.results.map(pokemon => {\n  return { json: { url: pokemon.url, run_id: runId } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -224
+      ],
+      "id": "243372fa-40d0-4cd8-96d6-662211ea2f53",
+      "name": "Split urls"
+    },
+    {
+      "parameters": {
+        "url": "={{$json[\"url\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        -224
+      ],
+      "id": "de7ed152-cef7-47c5-92fc-9f0290f5d6c9",
+      "name": "GET Pokemon details"
+    },
+    {
+      "parameters": {
+        "url": "https://pokeapi.co/api/v2/pokemon?limit=500",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        -224
+      ],
+      "id": "7812074c-b0c3-4937-aa6c-40ac13a5a487",
+      "name": "GET Pokemon from API"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    end_time: new Date().toISOString(),\n    status: 'success',\n    records_received: items.length,\n    records_inserted: items.length,\n    run_id: $('Split urls').first().json.run_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        16
+      ],
+      "id": "15038d31-f10d-4c65-af5f-97e27a3aef6f",
+      "name": "JSON with updated ingestion_run"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "ingestion_runs",
+          "mode": "list",
+          "cachedResultName": "ingestion_runs"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "run_id": 0,
+            "records_received": 0,
+            "records_inserted": 0
+          },
+          "matchingColumns": [
+            "run_id"
+          ],
+          "schema": [
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "start_time",
+              "displayName": "start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "end_time",
+              "displayName": "end_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "records_received",
+              "displayName": "records_received",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "records_inserted",
+              "displayName": "records_inserted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        528,
+        16
+      ],
+      "id": "bb47e8a1-a0e7-4df1-a408-bffabcaea0db",
+      "name": "INSERT updated ingestion_run",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "pokemon",
+          "mode": "list",
+          "cachedResultName": "pokemon"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "has_official_artwork": false,
+            "has_front_sprite": false,
+            "pokemon_id": 0,
+            "base_experience": 0,
+            "height": 0,
+            "weight": 0,
+            "run_id": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "pokemon_id",
+              "displayName": "pokemon_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pokemon_name",
+              "displayName": "pokemon_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "base_experience",
+              "displayName": "base_experience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "height",
+              "displayName": "height",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "weight",
+              "displayName": "weight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "main_type",
+              "displayName": "main_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "has_official_artwork",
+              "displayName": "has_official_artwork",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "has_front_sprite",
+              "displayName": "has_front_sprite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_last_updated_at",
+              "displayName": "source_last_updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ingested_at",
+              "displayName": "ingested_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -544,
+        16
+      ],
+      "id": "c5a9b570-3386-4a7e-8e60-123383770d44",
+      "name": "INSERT pokemon in BDD",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const p = item.json;\n  const runId = $('Split urls').item.json.run_id;\n\n  return {\n    json: {\n      pokemon_id: p.id,\n      pokemon_name: p.name,\n      base_experience: p.base_experience ?? null,\n      height: p.height,\n      weight: p.weight,\n      main_type: p.types[0]?.type?.name || null,\n      has_official_artwork: !!p.sprites?.other?.['official-artwork']?.front_default,\n      has_front_sprite: !!p.sprites?.front_default,\n      source_last_updated_at: new Date().toISOString(),\n      ingested_at: new Date().toISOString(),\n      run_id: runId\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        -224
+      ],
+      "id": "1a97fdae-1948-40b7-81f4-7bb1655d681a",
+      "name": "Create JSON details by pokemon"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    source: 'PokeAPI',\n    start_time: new Date().toISOString(),\n    status: 'running',\n    records_received: 0,\n    records_inserted: 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        -224
+      ],
+      "id": "3e18c8fd-2839-422e-a4e4-829df41d94d4",
+      "name": "Create JSON ingestion_run"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "raw-pokemon",
+        "fileName": "=pokemon_{{ $json.id }}.json",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "6af4b782-3c13-44eb-a22d-e270b56f5b3a",
+      "name": "Upload a file",
+      "credentials": {
+        "s3": {
+          "id": "vzeJsz9TuHMwv6HB",
+          "name": "S3 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO pokemon_files (pokemon_id, bucket_name, object_key, file_name, file_type)\nVALUES (\n  {{ $('JSON to BINARY').item.json.pokemon_id }},\n  '{{ $('JSON to BINARY').item.json.bucket_name }}',\n  '{{ $('JSON to BINARY').item.json.object_key }}',\n  '{{ $('JSON to BINARY').item.json.file_name }}',\n  '{{ $('JSON to BINARY').item.json.file_type }}'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -16,
+        16
+      ],
+      "id": "6e61fd64-028f-4620-8687-6af9b00c775e",
+      "name": "INSERT pokemon_files",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO file_ingestion_log (file_name, bucket_name, object_key, source, status, mime_type, url)\nVALUES (\n  '{{ $('JSON to BINARY').item.json.file_name }}',\n  '{{ $('JSON to BINARY').item.json.bucket_name }}',\n  '{{ $('JSON to BINARY').item.json.object_key }}',\n  'PokeAPI',\n  'success',\n  'application/json',\n  'http://localhost:9000/{{ $('JSON to BINARY').item.json.bucket_name }}/{{ $('JSON to BINARY').item.json.object_key }}'\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        160,
+        16
+      ],
+      "id": "b2df8ac7-7fa5-4624-bdfb-15046968bd94",
+      "name": "INSERT file_ingestion_log",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const p = $('GET Pokemon details').item.json;\n\nconst jsonString = JSON.stringify(p);\nconst fileName = `pokemon_${p.id}.json`;\n\nreturn [{\n  json: {\n    pokemon_id: p.id,\n    file_name: fileName,\n    bucket_name: 'raw-pokemon',\n    object_key: `raw/${fileName}`,\n    file_type: 'application/json',\n  },\n  binary: {\n    data: await this.helpers.prepareBinaryData(\n      Buffer.from(jsonString),\n      fileName,\n      'application/json'\n    )\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        16
+      ],
+      "id": "ce79fa58-edf4-4da0-9731-fabbb3e78acb",
+      "name": "JSON to BINARY"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -544,
+        448
+      ],
+      "id": "8e9d2a27-2c67-4bf6-94a2-c369338281a8",
+      "name": "Telegram Trigger",
+      "webhookId": "63aba6ac-60a0-4308-be6a-2717768f7d0e",
+      "credentials": {
+        "telegramApi": {
+          "id": "3Gwi3jJMhyBSEBSF",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/kpi",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "29dc960e-ceef-4d80-a84f-27a7eacb0a9f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b558f3c6-e946-454e-855c-b5b5744cb10b",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/types",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "05a81b8a-c9a6-4580-bf7e-4cf4247bd1fa",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/top",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3c2a27be-fce5-4311-b20c-6dbba93c4d0f",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/help",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        416
+      ],
+      "id": "bfec5103-74fd-4551-b1ff-3223a5e96e9d",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  COUNT(*) as total,\n  AVG(quality_score) as avg_quality\nFROM vw_pokemon_quality;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -192,
+        192
+      ],
+      "id": "b63d22e7-91ec-490b-ab06-34c18ebe8738",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger\"].json[\"message\"][\"chat\"][\"id\"]}}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        192
+      ],
+      "id": "12438b8a-daf3-4bf5-a92d-cc65f2afd033",
+      "name": "Send a text message",
+      "webhookId": "07dc5ad0-bf54-4068-b065-08f9b1b1dc0d",
+      "credentials": {
+        "telegramApi": {
+          "id": "3Gwi3jJMhyBSEBSF",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT main_type, COUNT(*) as count\nFROM pokemon\nGROUP BY main_type\nORDER BY count DESC\nLIMIT 5;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -192,
+        368
+      ],
+      "id": "db76b1cb-01ac-4fe1-ab0b-01e578bfeae4",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger\"].json[\"message\"][\"chat\"][\"id\"]}}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        368
+      ],
+      "id": "d0b33617-350e-4db6-9b62-3c4fd53fa1d0",
+      "name": "Send a text message1",
+      "webhookId": "07dc5ad0-bf54-4068-b065-08f9b1b1dc0d",
+      "credentials": {
+        "telegramApi": {
+          "id": "3Gwi3jJMhyBSEBSF",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger\"].json[\"message\"][\"chat\"][\"id\"]}}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -16,
+        720
+      ],
+      "id": "50f32922-163f-496b-b437-866d0ee78f66",
+      "name": "Send a text message2",
+      "webhookId": "07dc5ad0-bf54-4068-b065-08f9b1b1dc0d",
+      "credentials": {
+        "telegramApi": {
+          "id": "3Gwi3jJMhyBSEBSF",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT pokemon_name, base_experience\nFROM pokemon\nORDER BY base_experience DESC\nLIMIT 5;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -192,
+        544
+      ],
+      "id": "820bbeb3-1def-4222-bb20-2b709f9fdd88",
+      "name": "Execute a SQL query2",
+      "credentials": {
+        "postgres": {
+          "id": "XtQCjyxPqfirn33P",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger\"].json[\"message\"][\"chat\"][\"id\"]}}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        544
+      ],
+      "id": "dbc97987-a82f-434f-a384-14ba15f6ab83",
+      "name": "Send a text message3",
+      "webhookId": "07dc5ad0-bf54-4068-b065-08f9b1b1dc0d",
+      "credentials": {
+        "telegramApi": {
+          "id": "3Gwi3jJMhyBSEBSF",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const total = $input.first().json.total;\nconst avg = parseFloat($input.first().json.avg_quality).toFixed(2);\n\nreturn [{\n  json: {\n    text: `📊 *Tableau de bord Pokémon*\n\n━━━━━━━━━━━━━━━\n\n🔢 *Volume total*\n• ${total} Pokémon référencés\n\n⭐ *Qualité des données*\n• Score moyen : ${avg} / 3\n\n🧪 *Analyse*\n• Données complètes et cohérentes\n• Aucun problème détecté\n\n━━━━━━━━━━━━━━━\n🤖 Source : PostgreSQL`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        192
+      ],
+      "id": "d710d0a8-8b1c-4497-8541-7256a7a6a06b",
+      "name": "Route kpi"
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = `📊 *Répartition par type*\n\n━━━━━━━━━━━━━━━\n\n`;\n\nitems.forEach((item, index) => {\n  text += `${index + 1}. *${item.json.main_type}* → ${item.json.count}\\n`;\n});\n\ntext += `\n━━━━━━━━━━━━━━━\n📈 Distribution des Pokémon`;\n\nreturn [{ json: { text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        368
+      ],
+      "id": "c0a8dabb-44b6-4f44-82c9-1f90f295b870",
+      "name": "Route types"
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = `🏆 *Top Pokémon (expérience)*\n\n━━━━━━━━━━━━━━━\n\n`;\n\nitems.forEach((item, index) => {\n  text += `${index + 1}. *${item.json.pokemon_name}*  \n   → Expérience : ${item.json.base_experience}\\n\\n`;\n});\n\ntext += `━━━━━━━━━━━━━━━\n🔥 Pokémon les plus performants`;\n\nreturn [{ json: { text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        544
+      ],
+      "id": "0a3e6aec-a5e0-44b3-8329-de7ce295bffe",
+      "name": "Route top"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    text: `🤖 *Assistant Pokémon*\n\n━━━━━━━━━━━━━━━\n\n📊 */kpi*\n→ Indicateurs globaux\n\n📈 */types*\n→ Répartition par type\n\n🏆 */top*\n→ Pokémon les plus puissants\n\n━━━━━━━━━━━━━━━\n💬 Utilise une commande pour interagir`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        720
+      ],
+      "id": "93f267f4-bdb9-431c-be03-28f465a3adbb",
+      "name": "Route help"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Create JSON ingestion_run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert ingestion_run": {
+      "main": [
+        [
+          {
+            "node": "GET Pokemon from API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split urls": {
+      "main": [
+        [
+          {
+            "node": "GET Pokemon details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Pokemon details": {
+      "main": [
+        [
+          {
+            "node": "Create JSON details by pokemon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Pokemon from API": {
+      "main": [
+        [
+          {
+            "node": "Split urls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON with updated ingestion_run": {
+      "main": [
+        [
+          {
+            "node": "INSERT updated ingestion_run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INSERT pokemon in BDD": {
+      "main": [
+        [
+          {
+            "node": "JSON to BINARY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create JSON details by pokemon": {
+      "main": [
+        [
+          {
+            "node": "INSERT pokemon in BDD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create JSON ingestion_run": {
+      "main": [
+        [
+          {
+            "node": "Insert ingestion_run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file": {
+      "main": [
+        [
+          {
+            "node": "INSERT pokemon_files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INSERT pokemon_files": {
+      "main": [
+        [
+          {
+            "node": "INSERT file_ingestion_log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INSERT file_ingestion_log": {
+      "main": [
+        [
+          {
+            "node": "JSON with updated ingestion_run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON to BINARY": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Route kpi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "Route types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query2": {
+      "main": [
+        [
+          {
+            "node": "Route top",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route kpi": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route types": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route top": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route help": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false
+  },
+  "versionId": "d4197624-c9d0-415b-bda7-7bac3845eee4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33b03826d04ecbc14ef0e905cb87044aafb901e633f8f74ab73f7a157045872a"
+  },
+  "id": "d6alcnKUFwYASDka",
+  "tags": []
+}
