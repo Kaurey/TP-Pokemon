@@ -1,54 +1,165 @@
-﻿# TP 2 Individuel — Pipeline PokeAPI, n8n et PostgreSQL
+﻿# 🐍 Projet Data Pokémon — Pipeline, Data Lake et Analytics
 
-Ce dépôt contient l'environnement Docker et la documentation pour construire un pipeline local qui interroge la PokéAPI, transforme les données et les charge dans PostgreSQL via n8n.
+Ce projet met en place une architecture data complète autour de la PokéAPI, en combinant :
 
-## Objectif
+- un pipeline d’ingestion (n8n + PostgreSQL)
+- un stockage objet (MinIO)
+- une couche analytique (PostgreSQL + Metabase)
+- une automatisation via Telegram
 
-Mettre en place une architecture locale permettant :
+---
 
-- d’interroger la PokéAPI
-- de récupérer un ensemble de données Pokémon
-- de sélectionner et transformer les champs utiles
-- de charger les données dans PostgreSQL
-- de suivre les exécutions d’ingestion
+# 🚀 Lancer le projet
 
-## Prérequis
+## 📋 Prérequis
 
-- Docker Desktop (ou Docker Engine + Docker Compose)
+- Docker + Docker Compose
+- Node.js (optionnel si usage avancé)
+- Compte Telegram
+- Compte ngrok
 
-## Démarrage rapide
+---
 
-1. Lancer les services :
+## 🐳 1. Démarrer l’environnement
+
+Lancer tous les services :
 
 ```bash
 docker compose up -d
 ```
 
-2. Vérifier que les services sont actifs :
+Services disponibles :
 
-- n8n : `http://localhost:5678`
-- PostgreSQL : `localhost:5432`
+- n8n → http://localhost:5678
+- PostgreSQL → localhost:5432
+- MinIO → http://localhost:9001
 
-## Services Docker
+---
 
-Le `docker-compose.yml` démarre :
+## 🌐 2. Exposer n8n avec ngrok (OBLIGATOIRE pour Telegram)
 
-- `postgres:15` avec la base `pokemon_db`
-- `n8nio/n8n` connecté à PostgreSQL
+Telegram nécessite une URL HTTPS pour fonctionner.
 
-Variables importantes (déjà configurées dans le compose) :
+### Lancer ngrok
 
-- `POSTGRES_USER=postgres`
-- `POSTGRES_PASSWORD=postgres`
-- `POSTGRES_DB=pokemon_db`
-- `DB_TYPE=postgres`
-- `DB_POSTGRESDB_HOST=postgres`
-- `DB_POSTGRESDB_PORT=5432`
-- `DB_POSTGRESDB_DATABASE=pokemon_db`
-- `DB_POSTGRESDB_USER=postgres`
-- `DB_POSTGRESDB_PASSWORD=postgres`
+```bash
+ngrok http 5678
+```
 
-## Structure SQL (tables minimales)
+Vous obtiendrez une URL du type :
+
+```
+https://xxxxx.ngrok-free.dev
+```
+
+---
+
+## ⚙️ 3. Configurer n8n
+
+Dans votre `docker-compose.yml`, ajouter :
+
+```yaml
+environment:
+  - WEBHOOK_URL=https://xxxxx.ngrok-free.dev
+```
+
+⚠️ Remplacer par votre URL ngrok
+
+Puis redémarrer :
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+---
+
+## 🤖 4. Configurer le bot Telegram
+
+1. Ouvrir Telegram
+2. Chercher **BotFather**
+3. Créer un bot avec `/newbot`
+4. Récupérer le **TOKEN**
+
+---
+
+## 🔗 5. Configurer n8n avec Telegram
+
+Dans n8n :
+
+- Ajouter des credentials Telegram
+- Coller le TOKEN
+- Utiliser un node **Telegram Trigger**
+
+---
+
+## ▶️ 6. Activer le workflow
+
+- Publier le workflow (IMPORTANT)
+- Vérifier qu’il est actif
+
+---
+
+## 💬 7. Tester
+
+Dans Telegram, envoyer :
+
+```
+/help
+/kpi
+/types
+/top
+```
+
+---
+
+## ⚠️ Problèmes fréquents
+
+### ❌ Erreur webhook HTTPS
+
+➡️ Vérifier :
+- ngrok est lancé
+- WEBHOOK_URL est bien configuré
+- workflow activé
+
+### ❌ Le bot ne répond pas
+
+➡️ Vérifier :
+- workflow publié
+- bon token Telegram
+- message envoyé au bon bot
+
+---
+
+## ✅ Résultat attendu
+
+- n8n reçoit les messages Telegram
+- interroge PostgreSQL
+- renvoie une réponse formatée
+
+---
+
+# 🧱 TP 2 — Pipeline ETL (Data Warehouse)
+
+## Objectif
+
+Construire un pipeline permettant de :
+
+- interroger la PokéAPI
+- transformer les données
+- les charger dans PostgreSQL
+- suivre les exécutions
+
+---
+
+## 🐳 Services Docker
+
+- PostgreSQL
+- n8n
+
+---
+
+## 🗄️ Structure SQL
 
 ```sql
 create table if not exists ingestion_runs (
@@ -77,60 +188,214 @@ create table if not exists pokemon (
 );
 ```
 
-Notes :
+---
 
-- `run_id` permet de relier chaque Pokémon à une exécution d’ingestion.
-- Les champs `has_official_artwork` et `has_front_sprite` servent d’indicateurs simples.
+## ⚙️ Workflow n8n
 
-## Workflow n8n (description)
+1. Appel API PokéAPI
+2. Transformation des données
+3. Création d’indicateurs
+4. Insertion en base
+5. Suivi via ingestion_runs
 
-Le workflow doit :
+---
 
-1. Appeler la PokéAPI (HTTP Request).
-2. Récupérer les données JSON.
-3. Identifier les champs utiles.
-4. Transformer les données (renommage des champs, gestion des valeurs manquantes, création d’indicateurs `has_official_artwork` et `has_front_sprite`).
-5. Préparer les enregistrements pour insertion.
-6. Insérer dans `pokemon`.
-7. Enregistrer l’exécution dans `ingestion_runs`.
-
-## Requêtes SQL de contrôle (exemples)
+## 🔍 Requêtes de contrôle
 
 ```sql
--- 1) Nombre total de Pokémon chargés
-select count(*) as total_pokemon from pokemon;
+select count(*) from pokemon;
 
--- 2) Pokémon sans image officielle
-select count(*) as no_official_artwork
-from pokemon
-where has_official_artwork = false;
+select count(*) from pokemon where has_official_artwork = false;
 
--- 3) Pokémon sans sprite frontal
-select count(*) as no_front_sprite
-from pokemon
-where has_front_sprite = false;
+select count(*) from pokemon where has_front_sprite = false;
 
--- 4) Répartition par type principal
-select main_type, count(*) as total
-from pokemon
-group by main_type
-order by total desc;
+select main_type, count(*) from pokemon group by main_type;
 
--- 5) Noms vides ou manquants
-select count(*) as missing_name
-from pokemon
-where pokemon_name is null or trim(pokemon_name) = '';
+select count(*) from pokemon where pokemon_name is null;
 ```
 
-## Justification — logique Data Warehouse (réponse courte)
+---
 
-Cette architecture relève d’une logique Data Warehouse car elle met en place une chaîne ETL (extraction via API, transformation, chargement) vers une base relationnelle structurée. Les données sont historisées par exécution (`ingestion_runs`) et normalisées pour des analyses ultérieures, ce qui correspond aux principes d’un entrepôt de données.
+## 🧠 Justification Data Warehouse
 
-## Livrables attendus
+Cette architecture correspond à une logique Data Warehouse car elle met en place un pipeline ETL structuré, avec des données transformées, historisées et prêtes pour l’analyse.
 
-- Structure SQL des tables
-- Description du workflow n8n
-- Preuve de chargement dans PostgreSQL
-- Repo GitHub
-- 5 requêtes SQL de contrôle
-- Réponse à la question finale (logique Data Warehouse)
+---
+
+# 🪣 TP Data Lake — MinIO
+
+## Objectif
+
+Ajouter un stockage objet pour :
+
+- conserver les données brutes
+- stocker fichiers et images
+- enrichir l’architecture
+
+---
+
+## 📁 Organisation
+
+- raw-pokemon
+- pokemon-images
+- reports
+
+---
+
+## 🗄️ Tables ajoutées
+
+```sql
+create table if not exists pokemon_files (
+  file_id serial primary key,
+  pokemon_id integer,
+  bucket_name text,
+  object_key text,
+  file_name text,
+  file_type text,
+  created_at timestamp default now()
+);
+
+create table if not exists file_ingestion_log (
+  id serial primary key,
+  file_name text,
+  bucket text,
+  object_key text,
+  processed_at timestamp default now(),
+  source text,
+  status text
+);
+```
+
+---
+
+## ⚙️ Workflow
+
+- récupération fichier
+- envoi vers MinIO
+- stockage des métadonnées
+- lien avec Pokémon
+
+---
+
+## 🧠 Justification Data Lake
+
+MinIO permet de stocker les données brutes indépendamment de leur structure. PostgreSQL contient uniquement les données analytiques et les métadonnées. Cette séparation correspond à une logique Data Lake / Lakehouse.
+
+---
+
+# 📊 TP 3 — Analytics & Telegram
+
+---
+
+## 🧱 Couche analytique
+
+```sql
+create or replace view vw_pokemon_kpi as
+select
+  count(*) as total,
+  avg(base_experience) as avg_experience
+from pokemon;
+
+create or replace view vw_pokemon_types as
+select
+  main_type,
+  count(*) as count
+from pokemon
+group by main_type
+order by count desc;
+
+create or replace view vw_pokemon_top as
+select
+  pokemon_name,
+  base_experience
+from pokemon
+order by base_experience desc
+limit 10;
+```
+
+---
+
+## 📈 KPI
+
+- volume de Pokémon
+- expérience moyenne
+- répartition par type
+- top Pokémon
+
+---
+
+## 📊 Dashboard
+
+Créé avec Metabase :
+
+- KPI globaux
+- graphique types
+- classement
+
+---
+
+## 🤖 Telegram Bot
+
+### Commandes
+
+- /kpi
+- /types
+- /top
+- /help
+
+---
+
+## ⚙️ Workflow n8n
+
+1. Réception message Telegram
+2. Routage commande
+3. Requête SQL
+4. Formatage réponse
+5. Envoi message
+
+---
+
+## 💬 Exemple réponse
+
+```
+📊 Tableau de bord Pokémon
+
+━━━━━━━━━━━━━━━
+
+🔢 Volume total
+• 500 Pokémon référencés
+
+⭐ Qualité des données
+• Score moyen : 3.00 / 3
+
+🧪 Analyse
+• Données complètes et cohérentes
+• Aucun problème détecté
+
+━━━━━━━━━━━━━━━
+🤖 Source : PostgreSQL
+
+This message was sent automatically with n8n
+```
+
+---
+
+## 🧠 Réponse finale
+
+Une couche analytique permet de simplifier l’accès aux données en transformant des tables techniques en structures lisibles. Elle facilite la réutilisation dans des outils comme Metabase ou n8n.
+
+Les KPI ont été choisis pour fournir une lecture rapide et compréhensible du référentiel. Ils permettent d’identifier les volumes, les répartitions et les performances.
+
+La restitution visuelle permet de piloter efficacement la qualité des données grâce à une lecture synthétique.
+
+Telegram offre une interface interactive permettant d’interroger les données sans outil technique.
+
+Enfin, une requête SQL est statique, tandis qu’une automatisation permet une interaction dynamique avec les données.
+
+---
+
+## 📸 Captures
+
+- Dashboard Metabase
+- Workflow n8n
+- Réponses Telegram

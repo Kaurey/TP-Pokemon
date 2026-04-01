@@ -28,12 +28,13 @@ services:
       - DB_POSTGRESDB_USER=postgres
       - DB_POSTGRESDB_PASSWORD=postgres
       - N8N_BASIC_AUTH_ACTIVE=false
+      - WEBHOOK_URL=https://nonpursuant-nondistortedly-helaine.ngrok-free.dev
     volumes:
       - n8ndata:/home/node/.n8n
     depends_on:
       - postgres
 
-  minio:  # <-- MinIO doit être au même niveau que postgres et n8n
+  minio:
     image: minio/minio
     container_name: minio_tp
     restart: always
@@ -47,7 +48,19 @@ services:
     volumes:
       - minio_data:/data
 
+  metabase:
+    image: metabase/metabase
+    container_name: metabase_tp
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase_data:/metabase-data
+    depends_on:
+      - postgres
+
 volumes:
   pgdata:
   n8ndata:
   minio_data:
+  metabase_data:
